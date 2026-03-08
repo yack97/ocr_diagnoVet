@@ -1,5 +1,5 @@
-import functions_framework
-from flask import jsonify
+import os
+from flask import Flask, request, jsonify
 import uuid
 from datetime import datetime
 
@@ -21,10 +21,13 @@ if not firebase_admin._apps:
 
 logger = get_logger(__name__)
 
-@functions_framework.http
-def process_veterinary_doc(request):
+# Aplicación Flask para Cloud Run standard WSGI
+app = Flask(__name__)
+
+@app.route("/", methods=["GET", "POST", "OPTIONS"])
+def process_veterinary_doc():
     """
-    HTTP Cloud Function para procesar PDFs veterinarios de forma síncrona.
+    HTTP Cloud Run Endpoint para procesar PDFs veterinarios de forma síncrona.
     """
     # Configurar CORS (Cross-Origin Resource Sharing)
     headers = {
