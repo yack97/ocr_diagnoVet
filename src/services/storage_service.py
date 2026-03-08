@@ -2,27 +2,22 @@ import os
 from google.cloud import storage
 from src.config.settings import GCS_BUCKET_NAME, FOLDER_PENDING, FOLDER_PROCESSED, FOLDER_ERRORS, FOLDER_LOGS
 
-def get_storage_client() -> storage.Client:
-    return storage.Client()
-
-def get_bucket():
-    client = get_storage_client()
-    return client.bucket(GCS_BUCKET_NAME)
+# Global Storage Client and Bucket for Connection Pooling
+_storage_client = storage.Client()
+_bucket = _storage_client.bucket(GCS_BUCKET_NAME)
 
 def upload_to_gcs(file_data: bytes, destination_blob_name: str, content_type: str = "application/pdf") -> str:
 
-    bucket = get_bucket()
-    blob = bucket.blob(destination_blob_name)
+    blob = _bucket.blob(destination_blob_name)
     blob.upload_from_string(file_data, content_type=content_type)
     return f"gs://{GCS_BUCKET_NAME}/{destination_blob_name}"
 
 def move_blob(source_blob_name: str, destination_blob_name: str):
 
-    bucket = get_bucket()
-    source_blob = bucket.blob(source_blob_name)
+    source_blob = _bucket.blob(source_blob_name)
     
     # Copiar al nuevo destino
-    new_blob = bucket.copy_blob(source_blob, bucket, destination_blob_name)
+    new_blob = _bucket.copy_blob(source_blob, _bucket, destination_blob_name)
     
     # Eliminar el original
     source_blob.delete()

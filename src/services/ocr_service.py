@@ -4,10 +4,7 @@ from google.api_core.client_options import ClientOptions
 from src.config.settings import PROJECT_ID, DOCAI_LOCATION, DOCAI_PROCESSOR_ID
 
 def extract_text_with_docai(pdf_bytes: bytes) -> str:
-    """
-    Usa Google Cloud Document AI para extraer el texto crudo del PDF.
-    Soporta documentos > 30 páginas dividiéndolos en fragmentos.
-    """
+
     if not PROJECT_ID or not DOCAI_PROCESSOR_ID:
         raise ValueError("Falta configurar PROJECT_ID o DOCAI_PROCESSOR_ID")
         
@@ -18,7 +15,7 @@ def extract_text_with_docai(pdf_bytes: bytes) -> str:
     # Abrir PDF con PyMuPDF para contar y dividir
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     total_pages = len(doc)
-    CHUNK_SIZE = 15 # Límite seguro para la API síncrona de Document AI
+    CHUNK_SIZE = 15 
     extracted_full_text = ""
     
     # Procesar en fragmentos de 15 páginas
