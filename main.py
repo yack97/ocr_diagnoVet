@@ -66,6 +66,7 @@ def process_veterinary_doc():
         # --- GET Endpoint ---
         if request.method == 'GET':
             action = request.args.get('action')
+            logger.info(f"GET Request received. action={action}, args={dict(request.args)}")
             
             # Sub-ruta: Obtener URL Firmada de Storage (Para saltar error 400 CORS en Front)
             if action == 'get-signed-url':
@@ -84,10 +85,13 @@ def process_veterinary_doc():
             if action == 'list-patients':
                 try:
                     patients = list_all_extractions(limit=100)
-                    return (jsonify({"patients": patients}), 200, headers)
+                    # Serialize datetime objects that Firestore might return
+                    import json
+                    safe_patients = json.loads(json.dumps(patients, default=str))
+                    return (jsonify({"patients": safe_patients}), 200, headers)
                 except Exception as e:
-                    logger.error(f"Error listando pacientes: {e}")
-                    return (jsonify({"error": "Error al listar pacientes"}), 500, headers)
+                    logger.error(f"Error listando pacientes: {e}", exc_info=True)
+                    return (jsonify({"error": "Error al listar pacientes", "details": str(e)}), 500, headers)
             
             # Ruta original GET: Obtener datos de documento por ID
             doc_id = request.args.get('doc_id')
