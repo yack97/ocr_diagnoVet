@@ -101,7 +101,15 @@ def process_veterinary_doc():
 
                     # 2. Extraer imágenes (Rayos X) del PDF
                     logger.info("Extrayendo imágenes...")
-                    images_list = extract_images_from_pdf_bytes(pdf_bytes)
+                    raw_images_list = extract_images_from_pdf_bytes(pdf_bytes)
+                    
+                    if raw_images_list:
+                        logger.info(f"Clasificando {len(raw_images_list)} imágenes con IA multimodal para descartar logos...")
+                        from src.services.vertex_service import filter_medical_images
+                        images_list = filter_medical_images(raw_images_list)
+                        logger.info(f"Imágenes médicas reales encontradas: {len(images_list)}")
+                    else:
+                        images_list = []
                     
                     # 3. Extraer texto con Document AI
                     logger.info("Extrayendo texto con Document AI...")
