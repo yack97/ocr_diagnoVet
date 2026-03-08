@@ -26,4 +26,4 @@ DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "9532e9b427f87068")
 
 
 # --- Vertex AI Config ---
-VERTEX_MODEL = os.getenv("VERTEX_MODEL", "gemini-1.5-flash-001") # Versión específica y estable
+VERTEX_MODEL = os.getenv("VERTEX_MODEL", "gemini-1.0-pro") # Usar la versión 1.0 clásica que casi todos los lab/proyectos de estudio admiten
