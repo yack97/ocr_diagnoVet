@@ -19,27 +19,39 @@ def process_veterinary_doc(request):
     """
     HTTP Cloud Function para procesar PDFs veterinarios de forma síncrona.
     """
+    # Configurar CORS (Cross-Origin Resource Sharing)
+    # Permite al frontend web llamar a esta API sin errores de seguridad
+    headers = {
+        'Access-Control-Allow-Origin': '*', # Cambiar a tu URL de Firebase Hosting ej: 'https://tu-app.web.app' en prod
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    }
+
+    # Preflight request. Responde a OPTIONS rápidamente.
+    if request.method == 'OPTIONS':
+        return ('', 204, headers)
+
     try:
         # --- GET Endpoint ---
         if request.method == 'GET':
             doc_id = request.args.get('doc_id')
             if not doc_id:
-                return jsonify({"error": "Falta parámetro doc_id"}), 400
+                return (jsonify({"error": "Falta parámetro doc_id"}), 400, headers)
             
             data = get_extraction_data(doc_id)
             if not data:
-                return jsonify({"error": f"Documento con ID {doc_id} no encontrado"}), 404
+                return (jsonify({"error": f"Documento con ID {doc_id} no encontrado"}), 404, headers)
             
-            return jsonify(data), 200
+            return (jsonify(data), 200, headers)
 
         # --- POST Endpoint (Procesamiento de múltiples PDFs) ---
         if request.method == 'POST':
             if 'files' not in request.files:
-                return jsonify({"error": "No se encontraron archivos en la clave 'files'"}), 400
+                return (jsonify({"error": "No se encontraron archivos en la clave 'files'"}), 400, headers)
             
             files = request.files.getlist('files')
             if not files:
-                return jsonify({"error": "La lista de archivos está vacía"}), 400
+                return (jsonify({"error": "La lista de archivos está vacía"}), 400, headers)
 
             batch_id = str(uuid.uuid4())
             results = []
@@ -100,8 +112,11 @@ def process_veterinary_doc(request):
                     results.append({
                         "filename": filename,
                         "doc_id": doc_id,
-                        "status": "success"
+                        "status": "success",
+                        "datos_extraidos": vertex_json,
+                        "imagenes_urls": gcs_urls.get("imagenes", [])
                     })
+
                     
                 except Exception as e:
                     logger.error(f"Error procesando {filename}: {e}")
@@ -129,14 +144,14 @@ def process_veterinary_doc(request):
                     })
 
             # Retornar el resumen de todo el lote procesado
-            return jsonify({
+            return (jsonify({
                 "message": f"Lote {batch_id} procesado",
                 "batch_id": batch_id,
                 "resultados": results
-            }), 201
+            }), 201, headers)
 
-        return jsonify({"error": "Método no soportado"}), 405
+        return (jsonify({"error": "Método no soportado"}), 405, headers)
 
     except Exception as e:
         logger.error(f"Error crítico en la Cloud Function: {e}")
-        return jsonify({"error": "Error interno del servidor", "details": str(e)}), 500
+        return (jsonify({"error": "Error interno del servidor", "details": str(e)}), 500, headers)
