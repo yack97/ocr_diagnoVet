@@ -22,7 +22,11 @@ if not firebase_admin._apps:
 logger = get_logger(__name__)
 
 # Aplicación Flask para Cloud Run standard WSGI
+from flask_cors import CORS
 app = Flask(__name__)
+
+# Configurar CORS (Cross-Origin Resource Sharing)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 @app.route("/", methods=["GET", "POST", "OPTIONS"])
 def process_veterinary_doc():
