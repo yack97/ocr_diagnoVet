@@ -1,9 +1,10 @@
-functions-framework>=3.0.0
-google-cloud-documentai>=2.0.0
-google-cloud-storage>=2.0.0
-google-cloud-firestore>=2.0.0
-google-cloud-aiplatform>=1.0.0
-PyMuPDF>=1.20.0  # Para extracción de imágenes de los PDFs
-pydantic>=2.0.0 # Para validación de datos
-python-dotenv>=1.0.0 # Para manejo de variables de entorno locales
-firebase-admin>=6.0.0 # Para validación de tokens de Auth
+Flask>=3.0.0
+gunicorn>=21.0.0
+google-cloud-documentai
+google-cloud-storage
+google-cloud-firestore
+google-cloud-aiplatform
+PyMuPDF
+pydantic
+python-dotenv
+firebase-admin
