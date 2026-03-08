@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Google Cloud Config ---
-PROJECT_ID = os.getenv("PROJECT_ID", "immersion-005")
+PROJECT_ID = os.getenv("PROJECT_ID", "immersion-005-7e407")
 LOCATION = os.getenv("LOCATION", "europe-west1") # Usado para Document AI y Vertex AI
 
 # --- Storage Config ---
