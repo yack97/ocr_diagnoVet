@@ -1,0 +1,8 @@
+functions-framework==3.*
+google-cloud-documentai==2.*
+google-cloud-storage==2.*
+google-cloud-firestore==2.*
+google-cloud-aiplatform==1.*
+PyMuPDF==1.*  # Para extracción de imágenes de los PDFs
+pydantic==2.* # Para validación de datos
+python-dotenv==1.* # Para manejo de variables de entorno locales
