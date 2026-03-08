@@ -1,1 +1,1 @@
-web: functions-framework --target=process_veterinary_doc --port=${PORT:-8080}
+web: gunicorn --bind :${PORT:-8080} --workers 1 --threads 8 --timeout 0 main:app
