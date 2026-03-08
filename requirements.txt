@@ -6,3 +6,4 @@ google-cloud-aiplatform==1.*
 PyMuPDF==1.*  # Para extracción de imágenes de los PDFs
 pydantic==2.* # Para validación de datos
 python-dotenv==1.* # Para manejo de variables de entorno locales
+firebase-admin==6.* # Para validación de tokens de Auth

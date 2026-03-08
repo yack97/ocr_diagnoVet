@@ -12,6 +12,13 @@ from src.models.schemas import ProcessingResult, VetExtractionResult
 from src.utils.pdf_utils import extract_images_from_pdf_bytes
 from src.utils.logger import get_logger
 
+import firebase_admin
+from firebase_admin import auth, credentials
+
+# Inicializar Firebase Admin usando las credenciales por defecto del entorno de GCP
+if not firebase_admin._apps:
+    firebase_admin.initialize_app()
+
 logger = get_logger(__name__)
 
 @functions_framework.http
@@ -20,16 +27,32 @@ def process_veterinary_doc(request):
     HTTP Cloud Function para procesar PDFs veterinarios de forma síncrona.
     """
     # Configurar CORS (Cross-Origin Resource Sharing)
-    # Permite al frontend web llamar a esta API sin errores de seguridad
     headers = {
-        'Access-Control-Allow-Origin': '*', # Cambiar a tu URL de Firebase Hosting ej: 'https://tu-app.web.app' en prod
+        'Access-Control-Allow-Origin': '*', # En prod: 'https://tu-app.web.app'
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
 
     # Preflight request. Responde a OPTIONS rápidamente.
     if request.method == 'OPTIONS':
         return ('', 204, headers)
+
+    # --- Verificación de Autenticación de Firebase ---
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        logger.warning("Intento de acceso denegado: Token ausente o formato inválido.")
+        return (jsonify({"error": "No autorizado. Token requerido."}), 401, headers)
+    
+    id_token = auth_header.split('Bearer ')[1]
+    
+    try:
+        # Verifica el token contra los servidores de Google/Firebase
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        logger.info(f"Usuario autenticado exitosamente: {uid}")
+    except Exception as e:
+        logger.warning(f"Intento de acceso con token inválido o expirado: {e}")
+        return (jsonify({"error": "No autorizado. Token inválido."}), 401, headers)
 
     try:
         # --- GET Endpoint ---
