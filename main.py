@@ -1,11 +1,15 @@
 import functions_framework
 from flask import jsonify
+import uuid
+from datetime import datetime
 
-from src.services.ocr_service import extract_data_from_pdf
+from src.config.settings import GCS_BUCKET_NAME
+from src.services.ocr_service import extract_text_with_docai
 from src.services.vertex_service import analyze_with_vertex_ai
-from src.services.storage_service import upload_images_to_gcs
+from src.services.storage_service import save_document_state
 from src.services.db_service import save_extraction_data, get_extraction_data
-from src.utils.pdf_utils import extract_images_from_pdf
+from src.models.schemas import ProcessingResult, VetExtractionResult
+from src.utils.pdf_utils import extract_images_from_pdf_bytes
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -13,49 +17,126 @@ logger = get_logger(__name__)
 @functions_framework.http
 def process_veterinary_doc(request):
     """
-    HTTP Cloud Function.
-    Puedes usar este único entrypoint y enrutar basado en el método o path, 
-    o crear funciones desplegadas por separado.
+    HTTP Cloud Function para procesar PDFs veterinarios de forma síncrona.
     """
     try:
+        # --- GET Endpoint ---
         if request.method == 'GET':
-            # Endpoint para recuperar el JSON con metadatos e imágenes
             doc_id = request.args.get('doc_id')
             if not doc_id:
                 return jsonify({"error": "Falta parámetro doc_id"}), 400
             
             data = get_extraction_data(doc_id)
             if not data:
-                return jsonify({"error": "No encontrado"}), 404
+                return jsonify({"error": f"Documento con ID {doc_id} no encontrado"}), 404
             
             return jsonify(data), 200
 
+        # --- POST Endpoint (Procesamiento de múltiples PDFs) ---
         if request.method == 'POST':
-            # 1. Obtener el archivo PDF del request
-            # request.files.get('file') ...
+            if 'files' not in request.files:
+                return jsonify({"error": "No se encontraron archivos en la clave 'files'"}), 400
             
-            # 2. Extraer información estructurada usando Document AI
-            # extracted_text = extract_data_from_pdf(pdf_content)
-            
-            # 3. Extraer imágenes RX usando utilitario de PDF (Ej. PyMuPDF)
-            # image_bytes_list = extract_images_from_pdf(pdf_content)
-            
-            # 4. (Opcional) Analizar texto o imágenes con Vertex AI si Document AI no es suficiente
-            # vertex_analysis = analyze_with_vertex_ai(extracted_text, image_bytes_list)
+            files = request.files.getlist('files')
+            if not files:
+                return jsonify({"error": "La lista de archivos está vacía"}), 400
 
-            # 5. Subir imágenes extraídas a GCS
-            # image_urls = upload_images_to_gcs(image_bytes_list)
-            
-            # 6. Guardar metadatos en Firestore / Cloud SQL
-            # doc_id = save_extraction_data(metadata_dict, image_urls)
-            
+            batch_id = str(uuid.uuid4())
+            results = []
+
+            for file in files:
+                doc_id = str(uuid.uuid4())
+                filename = file.filename
+                
+                logger.info(f"Procesando archivo: {filename} (Doc ID: {doc_id})")
+                
+                try:
+                    # 1. Leer el archivo PDF en memoria
+                    pdf_bytes = file.read()
+                    
+                    if not pdf_bytes:
+                         raise ValueError("El archivo está vacío.")
+
+                    # 2. Extraer imágenes (Rayos X) del PDF
+                    logger.info("Extrayendo imágenes...")
+                    images_list = extract_images_from_pdf_bytes(pdf_bytes)
+                    
+                    # 3. Extraer texto con Document AI
+                    logger.info("Extrayendo texto con Document AI...")
+                    extracted_text = extract_text_with_docai(pdf_bytes)
+                    
+                    # 4. Analizar el texto con Vertex AI para estructurarlo
+                    logger.info("Analizando texto con Vertex AI...")
+                    vertex_json = analyze_with_vertex_ai(extracted_text)
+                    
+                    # 5. Guardar archivos (PDF, Text, JSON, Imgs) en GCS (Manejo de carpetas)
+                    logger.info("Guardando estado en Storage...")
+                    gcs_urls = save_document_state(
+                        batch_id=batch_id,
+                        doc_id=doc_id,
+                        pdf_bytes=pdf_bytes,
+                        extracted_text=extracted_text,
+                        images_list=images_list,
+                        json_data_str=str(vertex_json),
+                        estado="EXITO"
+                    )
+                    
+                    # 6. Guardar en Firestore
+                    logger.info("Guardando en Firestore...")
+                    vet_result = VetExtractionResult(**vertex_json)
+                    
+                    processing_result = ProcessingResult(
+                        doc_id=doc_id,
+                        batch_id=batch_id,
+                        fecha_procesamiento=datetime.utcnow().isoformat() + "Z",
+                        estado="PROCESADO",
+                        metadatos_extraidos=vet_result,
+                        imagenes_urls=gcs_urls.get("imagenes", []),
+                        txt_url=gcs_urls.get("txt", "")
+                    )
+                    
+                    save_extraction_data(processing_result)
+                    
+                    results.append({
+                        "filename": filename,
+                        "doc_id": doc_id,
+                        "status": "success"
+                    })
+                    
+                except Exception as e:
+                    logger.error(f"Error procesando {filename}: {e}")
+                    
+                    # Guardar log de error en Storage
+                    try:
+                        save_document_state(
+                            batch_id=batch_id,
+                            doc_id=doc_id,
+                            pdf_bytes=pdf_bytes if 'pdf_bytes' in locals() else b"",
+                            extracted_text="",
+                            images_list=[],
+                            json_data_str="",
+                            estado="ERROR",
+                            error_msg=str(e)
+                        )
+                    except Exception as nested_e:
+                        logger.error(f"Falla crítica guardando error en Storage: {nested_e}")
+
+                    results.append({
+                        "filename": filename,
+                        "doc_id": doc_id,
+                        "status": "error",
+                        "error_message": str(e)
+                    })
+
+            # Retornar el resumen de todo el lote procesado
             return jsonify({
-                "message": "Procesamiento exitoso",
-                "doc_id": "generado_por_db"
+                "message": f"Lote {batch_id} procesado",
+                "batch_id": batch_id,
+                "resultados": results
             }), 201
 
         return jsonify({"error": "Método no soportado"}), 405
 
     except Exception as e:
-        logger.error(f"Error procesando la solicitud: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error crítico en la Cloud Function: {e}")
+        return jsonify({"error": "Error interno del servidor", "details": str(e)}), 500
