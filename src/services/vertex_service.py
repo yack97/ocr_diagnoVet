@@ -1,6 +1,6 @@
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
-from src.config.settings import PROJECT_ID, LOCATION, VERTEX_MODEL
+from src.config.settings import PROJECT_ID, VERTEX_LOCATION, VERTEX_MODEL
 import json
 
 def analyze_with_vertex_ai(extracted_text: str) -> dict:
@@ -8,7 +8,7 @@ def analyze_with_vertex_ai(extracted_text: str) -> dict:
     Toma el texto crudo del PDF y usa Gemini vía Vertex AI para extraer 
     la estructura JSON requerida.
     """
-    vertexai.init(project=PROJECT_ID, location=LOCATION)
+    vertexai.init(project=PROJECT_ID, location=VERTEX_LOCATION)
     # Recomendado: Gemini 1.5 Pro para este tipo de tareas de extracción complejas
     model = GenerativeModel(VERTEX_MODEL)
     
