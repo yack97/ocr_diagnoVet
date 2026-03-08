@@ -10,18 +10,14 @@ def get_bucket():
     return client.bucket(GCS_BUCKET_NAME)
 
 def upload_to_gcs(file_data: bytes, destination_blob_name: str, content_type: str = "application/pdf") -> str:
-    """
-    Sube un archivo a GCS y devuelve su URI (gs://...)
-    """
+
     bucket = get_bucket()
     blob = bucket.blob(destination_blob_name)
     blob.upload_from_string(file_data, content_type=content_type)
     return f"gs://{GCS_BUCKET_NAME}/{destination_blob_name}"
 
 def move_blob(source_blob_name: str, destination_blob_name: str):
-    """
-    Mueve un archivo dentro del mismo bucket (usado para pasarlo de faltantes a procesados/errores)
-    """
+
     bucket = get_bucket()
     source_blob = bucket.blob(source_blob_name)
     
@@ -42,9 +38,7 @@ def save_document_state(
     estado: str = "EXITO",
     error_msg: str = ""
 ) -> dict:
-    """
-    Orquesta la carga de todos los archivos relacionados a un PDF hacia GCS.
-    """
+
     # 1. Definir carpeta base
     base_folder = FOLDER_PROCESSED if estado == "EXITO" else FOLDER_ERRORS
     doc_folder = f"{base_folder}/{batch_id}/{doc_id}"
