@@ -1,9 +1,9 @@
-functions-framework==3.*
-google-cloud-documentai==2.*
-google-cloud-storage==2.*
-google-cloud-firestore==2.*
-google-cloud-aiplatform==1.*
-PyMuPDF==1.*  # Para extracción de imágenes de los PDFs
-pydantic==2.* # Para validación de datos
-python-dotenv==1.* # Para manejo de variables de entorno locales
-firebase-admin==6.* # Para validación de tokens de Auth
+functions-framework>=3.0.0
+google-cloud-documentai>=2.0.0
+google-cloud-storage>=2.0.0
+google-cloud-firestore>=2.0.0
+google-cloud-aiplatform>=1.0.0
+PyMuPDF>=1.20.0  # Para extracción de imágenes de los PDFs
+pydantic>=2.0.0 # Para validación de datos
+python-dotenv>=1.0.0 # Para manejo de variables de entorno locales
+firebase-admin>=6.0.0 # Para validación de tokens de Auth
