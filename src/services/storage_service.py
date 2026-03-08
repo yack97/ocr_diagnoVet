@@ -25,6 +25,9 @@ def move_blob(source_blob_name: str, destination_blob_name: str):
 
 def generate_signed_url(gs_url: str, expiration_minutes: int = 15) -> str:
     from datetime import timedelta
+    import google.auth
+    from google.auth.transport import requests as auth_requests
+    import requests
     
     # gs://veterinaria-diagno-vet/procesados/...
     prefix = f"gs://{GCS_BUCKET_NAME}/"
@@ -34,11 +37,38 @@ def generate_signed_url(gs_url: str, expiration_minutes: int = 15) -> str:
     blob_name = gs_url[len(prefix):]
     blob = _bucket.blob(blob_name)
     
-    return blob.generate_signed_url(
-        version="v4",
-        expiration=timedelta(minutes=expiration_minutes),
-        method="GET"
-    )
+    # Obtener credenciales por defecto (ADC)
+    credentials, _ = google.auth.default()
+    
+    kwargs = {
+        "version": "v4",
+        "expiration": timedelta(minutes=expiration_minutes),
+        "method": "GET"
+    }
+
+    # Si es entorno sin llave privada, necesitamos Service Account Email y Access Token
+    if not hasattr(credentials, 'signer') or not credentials.signer:
+        # En Cloud Run obtenemos el Service Account del Servidor de Metadatos
+        sa_email = getattr(credentials, 'service_account_email', 'default')
+        if sa_email == 'default' or sa_email is None:
+            try:
+                resp = requests.get(
+                    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email", 
+                    headers={"Metadata-Flavor": "Google"}, 
+                    timeout=2
+                )
+                sa_email = resp.text
+            except Exception:
+                raise RuntimeError("No se pudo obtener el Service Account Email desde el Metadata Server")
+        
+        # Necesitamos un token válido para firmar a través de la API IAM
+        if not credentials.valid:
+            credentials.refresh(auth_requests.Request())
+            
+        kwargs["service_account_email"] = sa_email
+        kwargs["access_token"] = credentials.token
+
+    return blob.generate_signed_url(**kwargs)
 
 def save_document_state(
     batch_id: str, 
