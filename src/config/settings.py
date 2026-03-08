@@ -7,7 +7,7 @@ load_dotenv()
 # --- Google Cloud Config ---
 PROJECT_ID = os.getenv("PROJECT_ID", "immersion-005-7e407")
 LOCATION = os.getenv("LOCATION", "europe-west1") # Usado para donde levanta la app
-VERTEX_LOCATION = os.getenv("VERTEX_LOCATION", "europe-west4") # europa-west1 NO SOPORTA Gemini. Usamos europe-west4 (Países Bajos) o us-central1
+VERTEX_LOCATION = os.getenv("VERTEX_LOCATION", "us-central1") # Usar la base de Google (Iowa) para garantizar todos los modelos IA
 DOCAI_LOCATION = os.getenv("DOCAI_LOCATION", "eu") # Document AI solo soporta 'eu' y 'us' para la mayoría de procesadores
 
 # --- Storage Config ---
@@ -26,4 +26,4 @@ DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "9532e9b427f87068")
 
 
 # --- Vertex AI Config ---
-VERTEX_MODEL = os.getenv("VERTEX_MODEL", "gemini-1.5-flash") # Modelo más rápido, económico y disponible en todas las regiones
+VERTEX_MODEL = os.getenv("VERTEX_MODEL", "gemini-1.5-flash-001") # Versión específica y estable
