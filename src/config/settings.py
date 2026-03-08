@@ -21,7 +21,7 @@ FIRESTORE_DATABASE = os.getenv("FIRESTORE_DATABASE", "diagnovet")
 FIRESTORE_COLLECTION = os.getenv("FIRESTORE_COLLECTION", "extracciones_veterinaria")
 
 # --- Document AI Config ---
-DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "8ccf9f8c8babcdee")
+DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "a1b2c3d4e5f6g7")
 
 
 # --- Vertex AI Config ---
