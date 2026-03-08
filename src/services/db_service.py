@@ -18,3 +18,12 @@ def get_extraction_data(doc_id: str) -> dict | None:
     if doc.exists:
         return doc.to_dict()
     return None
+
+def list_all_extractions(limit: int = 50) -> list[dict]:
+    """Retrieve the most recent extraction records."""
+    docs = (_db_client.collection(FIRESTORE_COLLECTION)
+            .order_by('fecha_procesamiento', direction=firestore.Query.DESCENDING)
+            .limit(limit)
+            .stream())
+    return [doc.to_dict() for doc in docs]
+

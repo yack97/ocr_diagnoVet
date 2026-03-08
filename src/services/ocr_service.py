@@ -12,10 +12,7 @@ _docai_client = documentai.DocumentProcessorServiceClient(client_options=_docai_
 _docai_processor_name = _docai_client.processor_path(PROJECT_ID, DOCAI_LOCATION, DOCAI_PROCESSOR_ID)
 
 def extract_text_with_docai(pdf_bytes: bytes) -> str:
-    """
-    Usa Google Cloud Document AI para extraer el texto crudo del PDF.
-    Soporta documentos > 30 páginas dividiéndolos en fragmentos.
-    """
+
     
     # Abrir PDF con PyMuPDF para contar y dividir
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")

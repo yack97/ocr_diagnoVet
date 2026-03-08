@@ -7,7 +7,7 @@ from src.config.settings import GCS_BUCKET_NAME
 from src.services.ocr_service import extract_text_with_docai
 from src.services.vertex_service import analyze_with_vertex_ai
 from src.services.storage_service import save_document_state, generate_signed_url
-from src.services.db_service import save_extraction_data, get_extraction_data
+from src.services.db_service import save_extraction_data, get_extraction_data, list_all_extractions
 from src.models.schemas import ProcessingResult, VetExtractionResult
 from src.utils.pdf_utils import extract_images_from_pdf_bytes
 from src.utils.logger import get_logger
@@ -79,6 +79,15 @@ def process_veterinary_doc():
                 except Exception as e:
                     logger.error(f"Error generando URL firmada para {gs_url}: {e}")
                     return (jsonify({"error": "No se pudo generar el enlace", "details": str(e)}), 500, headers)
+            
+            # Sub-ruta: Listar todos los pacientes (Para el tab de Pacientes en el Front)
+            if action == 'list-patients':
+                try:
+                    patients = list_all_extractions(limit=100)
+                    return (jsonify({"patients": patients}), 200, headers)
+                except Exception as e:
+                    logger.error(f"Error listando pacientes: {e}")
+                    return (jsonify({"error": "Error al listar pacientes"}), 500, headers)
             
             # Ruta original GET: Obtener datos de documento por ID
             doc_id = request.args.get('doc_id')

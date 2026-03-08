@@ -2,9 +2,7 @@ import logging
 import sys
 
 def get_logger(name: str) -> logging.Logger:
-    """
-    Configura y retorna un logger estándar preparado para Google Cloud Logging.
-    """
+
     logger = logging.getLogger(name)
     
     # Previene que se añadan múltiples handlers si ya está configurado
