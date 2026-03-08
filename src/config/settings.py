@@ -25,4 +25,4 @@ DOCAI_PROCESSOR_ID = os.getenv("DOCAI_PROCESSOR_ID", "9532e9b427f87068")
 
 
 # --- Vertex AI Config ---
-VERTEX_MODEL = os.getenv("VERTEX_MODEL", "gemini-1.5-pro-preview-0409") # Puedes ajustarlo al modelo que prefieras
+VERTEX_MODEL = os.getenv("VERTEX_MODEL", "gemini-1.5-flash") # Modelo más rápido, económico y disponible en todas las regiones
