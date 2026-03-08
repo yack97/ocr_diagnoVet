@@ -1,6 +1,6 @@
 from google.cloud import documentai
 from google.api_core.client_options import ClientOptions
-from src.config.settings import PROJECT_ID, LOCATION, DOCAI_PROCESSOR_ID
+from src.config.settings import PROJECT_ID, DOCAI_LOCATION, DOCAI_PROCESSOR_ID
 
 def extract_text_with_docai(pdf_bytes: bytes) -> str:
     """
@@ -11,11 +11,11 @@ def extract_text_with_docai(pdf_bytes: bytes) -> str:
     if not PROJECT_ID or not DOCAI_PROCESSOR_ID:
         raise ValueError("Falta configurar PROJECT_ID o DOCAI_PROCESSOR_ID")
         
-    client_options = ClientOptions(api_endpoint=f"{LOCATION}-documentai.googleapis.com")
+    client_options = ClientOptions(api_endpoint=f"{DOCAI_LOCATION}-documentai.googleapis.com")
     client = documentai.DocumentProcessorServiceClient(client_options=client_options)
     
     # El nombre de recurso completo del procesador
-    name = client.processor_path(PROJECT_ID, LOCATION, DOCAI_PROCESSOR_ID)
+    name = client.processor_path(PROJECT_ID, DOCAI_LOCATION, DOCAI_PROCESSOR_ID)
     
     # Cargar el PDF en memoria para procesarlo
     raw_document = documentai.RawDocument(content=pdf_bytes, mime_type="application/pdf")
