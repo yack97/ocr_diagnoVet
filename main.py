@@ -11,6 +11,7 @@ from src.services.db_service import save_extraction_data, get_extraction_data
 from src.models.schemas import ProcessingResult, VetExtractionResult
 from src.utils.pdf_utils import extract_images_from_pdf_bytes
 from src.utils.logger import get_logger
+from src.services.vertex_service import filter_medical_images
 
 import firebase_admin
 from firebase_admin import auth, credentials
@@ -105,7 +106,6 @@ def process_veterinary_doc():
                     
                     if raw_images_list:
                         logger.info(f"Clasificando {len(raw_images_list)} imágenes con IA multimodal para descartar logos...")
-                        from src.services.vertex_service import filter_medical_images
                         images_list = filter_medical_images(raw_images_list)
                         logger.info(f"Imágenes médicas reales encontradas: {len(images_list)}")
                     else:
@@ -178,7 +178,7 @@ def process_veterinary_doc():
                         "filename": filename,
                         "doc_id": doc_id,
                         "status": "error",
-                        "error_message": str(e)
+                        "error_message": "Falla al procesar el documento. Revise los registros de Cloud Logging para más detalles."
                     })
 
             # Retornar el resumen de todo el lote procesado
@@ -192,4 +192,4 @@ def process_veterinary_doc():
 
     except Exception as e:
         logger.error(f"Error crítico en la Cloud Function: {e}")
-        return (jsonify({"error": "Error interno del servidor", "details": str(e)}), 500, headers)
+        return (jsonify({"error": "Error interno del servidor. Por favor, contacte a soporte si el problema persiste."}), 500, headers)

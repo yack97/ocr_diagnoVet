@@ -3,10 +3,11 @@ from vertexai.generative_models import GenerativeModel, Part
 from src.config.settings import PROJECT_ID, VERTEX_LOCATION, VERTEX_MODEL
 import json
 
+# Global Vertex AI Initialization for Connection Pooling
+vertexai.init(project=PROJECT_ID, location=VERTEX_LOCATION)
+_vertex_model = GenerativeModel(VERTEX_MODEL)
+
 def analyze_with_vertex_ai(extracted_text: str) -> dict:
- 
-    vertexai.init(project=PROJECT_ID, location=VERTEX_LOCATION)
-    model = GenerativeModel(VERTEX_MODEL)
     
     prompt = f"""
     Eres un analista experto en registros veterinarios. 
@@ -30,7 +31,7 @@ def analyze_with_vertex_ai(extracted_text: str) -> dict:
     """
     
     # Generar contenido
-    response = model.generate_content(prompt)
+    response = _vertex_model.generate_content(prompt)
     
     try:
         # Se limpia posibles retornos de markdown (```json o ```)
@@ -55,9 +56,6 @@ def filter_medical_images(images_list: list[tuple[str, bytes]]) -> list[tuple[st
     """
     if not images_list:
         return []
-        
-    vertexai.init(project=PROJECT_ID, location=VERTEX_LOCATION)
-    model = GenerativeModel(VERTEX_MODEL)
     
     prompt = """
     Te pasaré una lista de imágenes que fueron extraídas de un archivo PDF veterinario.
@@ -81,7 +79,7 @@ def filter_medical_images(images_list: list[tuple[str, bytes]]) -> list[tuple[st
         contents.append(Part.from_data(data=img_bytes, mime_type=mime_type))
     
     try:
-        response = model.generate_content(contents)
+        response = _vertex_model.generate_content(contents)
         clean_text = response.text.strip().replace("```json", "").replace("```", "")
         valid_filenames = json.loads(clean_text)
         
