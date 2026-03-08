@@ -23,6 +23,23 @@ def move_blob(source_blob_name: str, destination_blob_name: str):
     source_blob.delete()
     return f"gs://{GCS_BUCKET_NAME}/{destination_blob_name}"
 
+def generate_signed_url(gs_url: str, expiration_minutes: int = 15) -> str:
+    from datetime import timedelta
+    
+    # gs://veterinaria-diagno-vet/procesados/...
+    prefix = f"gs://{GCS_BUCKET_NAME}/"
+    if not gs_url.startswith(prefix):
+        raise ValueError(f"URL inválida o de otro bucket: {gs_url}")
+        
+    blob_name = gs_url[len(prefix):]
+    blob = _bucket.blob(blob_name)
+    
+    return blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(minutes=expiration_minutes),
+        method="GET"
+    )
+
 def save_document_state(
     batch_id: str, 
     doc_id: str, 

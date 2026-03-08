@@ -6,7 +6,7 @@ from datetime import datetime
 from src.config.settings import GCS_BUCKET_NAME
 from src.services.ocr_service import extract_text_with_docai
 from src.services.vertex_service import analyze_with_vertex_ai
-from src.services.storage_service import save_document_state
+from src.services.storage_service import save_document_state, generate_signed_url
 from src.services.db_service import save_extraction_data, get_extraction_data
 from src.models.schemas import ProcessingResult, VetExtractionResult
 from src.utils.pdf_utils import extract_images_from_pdf_bytes
@@ -65,9 +65,25 @@ def process_veterinary_doc():
     try:
         # --- GET Endpoint ---
         if request.method == 'GET':
+            action = request.args.get('action')
+            
+            # Sub-ruta: Obtener URL Firmada de Storage (Para saltar error 400 CORS en Front)
+            if action == 'get-signed-url':
+                gs_url = request.args.get('gs_url')
+                if not gs_url:
+                    return (jsonify({"error": "Falta parámetro gs_url"}), 400, headers)
+                
+                try:
+                    signed_url = generate_signed_url(gs_url)
+                    return (jsonify({"signed_url": signed_url}), 200, headers)
+                except Exception as e:
+                    logger.error(f"Error generando URL firmada para {gs_url}: {e}")
+                    return (jsonify({"error": "No se pudo generar el enlace", "details": str(e)}), 500, headers)
+            
+            # Ruta original GET: Obtener datos de documento por ID
             doc_id = request.args.get('doc_id')
             if not doc_id:
-                return (jsonify({"error": "Falta parámetro doc_id"}), 400, headers)
+                return (jsonify({"error": "Falta parámetro doc_id o action"}), 400, headers)
             
             data = get_extraction_data(doc_id)
             if not data:
