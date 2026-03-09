@@ -15,14 +15,12 @@ for loc in LOCATIONS:
     for mod in MODELS:
         try:
             model = GenerativeModel(mod)
-            # A simple lightweight call to test if the model endpoint is accessible
             resp = model.generate_content("hello")
             print(f"✅ SUCCESS: {mod} in {loc} (Response: {resp.text.strip()})")
             
-            # If we find one that works, exit
             import sys
             sys.exit(0)
             
         except Exception as e:
-            err_msg = str(e).split('\n')[0] # Get first line of error
+            err_msg = str(e).split('\n')[0] 
             print(f"❌ FAIL: {mod} in {loc} -> {err_msg}")
